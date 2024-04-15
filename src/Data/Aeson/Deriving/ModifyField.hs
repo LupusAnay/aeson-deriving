@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Aeson.Deriving.ModifyField where
 
@@ -46,4 +47,8 @@ instance
 newtype RemapTextField fieldName haskVal jsonVal a = RemapTextField
   (ModifyFieldOut fieldName (haskVal ==> jsonVal)
     (ModifyFieldIn fieldName (jsonVal ==> haskVal) a))
-  deriving newtype (FromJSON, ToJSON)
+
+deriving instance (FromJSON a, KnownSymbol fn, KnownJSON jv, KnownJSON hv, LoopWarning (ModifyFieldIn fn (jv ==> hv)) a) => FromJSON (RemapTextField fn hv jv a)
+
+deriving instance (ToJSON a, KnownSymbol fn, KnownJSON jv, KnownJSON hv, LoopWarning (ModifyFieldOut fn (hv ==> jv)) a) => ToJSON (RemapTextField fn hv jv a)
+

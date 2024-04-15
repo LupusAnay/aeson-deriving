@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Aeson.Deriving.WithConstantFields where
 
@@ -22,16 +23,19 @@ newtype WithConstantFields (obj :: k) (a :: Type) = WithConstantFields a
 --   decoding.
 newtype WithConstantFieldsOut (obj :: k) (a :: Type) = WithConstantFieldsOut a
   deriving stock (Generic)
-  deriving ToJSON via (WithConstantFields obj a)
   deriving FromJSON via a
+
+deriving via (WithConstantFields obj a) 
+  instance (LoopWarning (WithConstantFields obj) a, ToJSON a, KnownJSONObject obj) => ToJSON (WithConstantFieldsOut obj a)
 
 -- | Require arbitrary constant fields when decoding the object, but do not add them when
 --   encoding.
 newtype WithConstantFieldsIn (obj :: k) (a :: Type) = WithConstantFieldsIn a
   deriving stock (Generic)
   deriving ToJSON via a
-  deriving FromJSON via (WithConstantFields obj a)
 
+deriving via (WithConstantFields obj a) 
+  instance (LoopWarning (WithConstantFields obj) a, FromJSON a, KnownJSONObject obj) => FromJSON (WithConstantFieldsIn obj a)
 
 instance (ToJSON a, LoopWarning (WithConstantFields obj) a, KnownJSONObject obj) =>
   ToJSON (WithConstantFields obj a) where
